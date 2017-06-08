@@ -14,6 +14,20 @@ was little significant improvement.
 Try to use a combination of word2vec, wordnet, and spacy to validate the output
 that each one individual model returns.
 
+## USAGE
+
+### GENERAL TEST ON ALL CATEGORY NAMES
+
+```
+  python expand-keywords.py
+```
+
+### TEST ON SPECIFIC WORD
+
+```
+  python expand-keywords.py [WORD]
+```
+
 ### CURRENT CODE RESULT SET
 
 ```

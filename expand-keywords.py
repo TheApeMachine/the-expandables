@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+import sys
 import numpy as np
 import gensim
 import spacy
@@ -70,11 +73,8 @@ def clean(w2v_words, wn_words, spacy_words, w2v_stems, wn_stems, spacy_stems, wo
 
     return [], [], [], [], [], []
 
-for category in categories:
-    print "------------------"
-    print category
-    print "------------------"
-    iterate(category)
+if len(sys.argv) > 1:
+    iterate(sys.argv[1])
 
     w2v_words, wn_words, spacy_words, w2v_stems, wn_stems, spacy_stems = clean(
         w2v_words, wn_words, spacy_words, w2v_stems, wn_stems, spacy_stems, words
@@ -91,5 +91,28 @@ for category in categories:
     for w in np.unique(words):
         print w
 
-    print
     words = []
+else:
+    for category in categories:
+        print "------------------"
+        print category
+        print "------------------"
+        iterate(category)
+
+        w2v_words, wn_words, spacy_words, w2v_stems, wn_stems, spacy_stems = clean(
+            w2v_words, wn_words, spacy_words, w2v_stems, wn_stems, spacy_stems, words
+        )
+
+        for i in repeat(None, 2):
+            for w in np.unique(words):
+                iterate(w)
+
+            w2v_words, wn_words, spacy_words, w2v_stems, wn_stems, spacy_stems = clean(
+                w2v_words, wn_words, spacy_words, w2v_stems, wn_stems, spacy_stems, words
+            )
+
+        for w in np.unique(words):
+            print w
+
+        print
+        words = []
