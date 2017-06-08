@@ -11,6 +11,9 @@ nlp         = spacy.load('en')
 w2v_words   = []
 wn_words    = []
 spacy_words = []
+w2v_stems   = []
+wn_stems    = []
+spacy_stems = []
 words       = []
 categories  = [
     'advice',
@@ -38,31 +41,34 @@ def iterate(origin):
             for lemma in synset.lemma_names():
                 if lemma.find('_') == -1:
                     w2v_words.append(lemma)
+                    w2v_stems.append(stem(lemma))
 
         for word in model.most_similar(origin):
             if word[0].find('_') == -1:
                 wn_words.append(word[0])
+                wn_stems.append(stem(word[0]))
 
         for w in most_similar(nlp.vocab[u''.join([origin])]):
             spacy_words.append(w.lower_)
+            spacy_stems.append(stem(w.lower_))
 
     except:
         pass
 
-def clean(w2v_words, wn_words, spacy_words, words):
+def clean(w2v_words, wn_words, spacy_words, w2v_stems, wn_stems, spacy_stems, words):
     for w in w2v_words:
-        if w in wn_words or w in spacy_words:
-            words.append(stem(w))
+        if stem(w) in wn_stems or stem(w) in spacy_stems:
+            words.append(w)
 
     for w in wn_words:
-        if w in w2v_words or w in spacy_words:
-            words.append(stem(w))
+        if stem(w) in w2v_stems or stem(w) in spacy_stems:
+            words.append(w)
 
     for w in spacy_words:
-        if w in w2v_words or w in wn_words:
-            words.append(stem(w))
+        if stem(w) in w2v_stems or stem(w) in wn_stems:
+            words.append(w)
 
-    return [], [], []
+    return [], [], [], [], [], []
 
 for category in categories:
     print "------------------"
@@ -70,16 +76,16 @@ for category in categories:
     print "------------------"
     iterate(category)
 
-    w2v_words, wn_words, spacy_words = clean(
-        w2v_words, wn_words, spacy_words, words
+    w2v_words, wn_words, spacy_words, w2v_stems, wn_stems, spacy_stems = clean(
+        w2v_words, wn_words, spacy_words, w2v_stems, wn_stems, spacy_stems, words
     )
 
     for i in repeat(None, 2):
         for w in np.unique(words):
             iterate(w)
 
-        w2v_words, wn_words, spacy_words = clean(
-            w2v_words, wn_words, spacy_words, words
+        w2v_words, wn_words, spacy_words, w2v_stems, wn_stems, spacy_stems = clean(
+            w2v_words, wn_words, spacy_words, w2v_stems, wn_stems, spacy_stems, words
         )
 
     for w in np.unique(words):
