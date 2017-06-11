@@ -57,7 +57,7 @@ def iterate(origin):
 
     except:
         pass
-
+        
 def clean(w2v_words, wn_words, spacy_words, w2v_stems, wn_stems, spacy_stems, words):
     for w in w2v_words:
         if stem(w) in wn_stems or stem(w) in spacy_stems:
