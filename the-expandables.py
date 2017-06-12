@@ -6,9 +6,12 @@ import numpy as np
 import gensim
 import spacy
 import nltk
-from nltk.corpus import wordnet as wn
+import torch
+from nltk.corpus      import wordnet as wn
+from torchtext.vocab  import load_word_vectors
 from stemming.porter2 import stem
-from itertools import repeat
+from itertools        import repeat
+from operator         import itemgetter
 
 def load_data():
     print "LOADING WORD2VEC MODEL..."
@@ -17,10 +20,17 @@ def load_data():
     print "LOADING SPACY MODEL..."
     spacy_model = spacy.load('en')
 
+    print "LOADING GLOVE..."
+    glove_dict, glove_arr, glove_size = load_word_vectors('.', 'glove.6B', 100)
+
     print "LOADING RESNIK..."
     resnik = nltk.corpus.wordnet_ic.ic('ic-bnc-resnik-add1.dat')
 
-    return w2v_model, spacy_model, resnik
+    print
+    print "DATA LOADED!"
+    print
+
+    return w2v_model, spacy_model, glove_dict, glove_arr, glove_size, resnik
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
@@ -75,14 +85,26 @@ def expand(model, word, resnik):
                 })
         except AttributeError:
             # TRY SPACY
-            for w in most_similar(model.vocab[u''.join([word])]):
-                score        = compute_score(word, w.lower_, resnik)
-                score_total += score
+            try:
+                for w in most_similar(model.vocab[u''.join([word])]):
+                    score        = compute_score(word, w.lower_, resnik)
+                    score_total += score
 
-                expansions.append({
-                    'word':  w.lower_,
-                    'score': score
-                })
+                    expansions.append({
+                        'word':  w.lower_,
+                        'score': score
+                    })
+            except AttributeError:
+                # TRY GLOVE
+                for w in closest(model[0], model[1], get_word(word, model[0], model[1])):
+                    score        = compute_score(word, w[0], resnik, w[1])
+                    score_total += score
+
+                    expansions.append({
+                        'word':  w[0].lower(),
+                        'score': score
+                    })
+
 
     average = score_total / len(expansions)
 
@@ -92,10 +114,17 @@ def expand(model, word, resnik):
 
     return results
 
+def get_word(word, glove_dict, glove_arr):
+    return glove_arr[glove_dict[word]]
+
+def closest(glove_dict, glove_arr, d, n=10):
+    all_dists = [(w, torch.dist(d, get_word(w, glove_dict, glove_arr))) for w in glove_dict]
+    return sorted(all_dists, key=lambda t: t[1])[:n]
+
 def main():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-    w2v, spacy, resnik = load_data()
+    w2v, spacy, glove_dict, glove_arr, glove_size, resnik = load_data()
 
     categories  = [
         'advice',
@@ -116,6 +145,7 @@ def main():
         wn_words    = np.unique(expand(wn, c.lower(), resnik))
         w2v_words   = np.unique(expand(w2v, c.lower(), resnik))
         spacy_words = np.unique(expand(spacy, c.lower(), resnik))
+        glove_words = np.unique(expand([glove_dict, glove_arr], c.lower(), resnik))
         results     = []
 
         for w in wn_words:
@@ -125,6 +155,9 @@ def main():
             results.append(w)
 
         for w in spacy_words:
+            results.append(w)
+
+        for w in glove_words:
             results.append(w)
 
         print '--------------'
